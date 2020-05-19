@@ -7,9 +7,9 @@ The first time a user authenticates, its data and groups are imported into the A
 
 ###Keycloak configuration
 keycloak should be configured as follows
-1. create an admin-cli client application
-2. bb
-3. cc
+1. create a client application named as the value of the property keycloak.authentication.client
+2. 
+3. 
 
 ###Connector configuration
 The keycloak-authentication.properties properties are as follows
