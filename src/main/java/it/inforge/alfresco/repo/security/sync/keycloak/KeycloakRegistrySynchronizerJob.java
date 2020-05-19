@@ -13,6 +13,12 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
 
+/**
+ * quartz job that synchronizes keycloak users and group to alfresco.
+ *
+ * @author  Francesco Milesi
+ * @since   1.0
+ */
 public class KeycloakRegistrySynchronizerJob implements Job
 {
     private final Log logger = LogFactory.getLog(getClass());

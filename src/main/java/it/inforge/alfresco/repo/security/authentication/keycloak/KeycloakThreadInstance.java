@@ -22,16 +22,46 @@ import org.keycloak.representations.idm.UserRepresentation;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * does all the synchronization work as the {@link ThreadLocal}
+ * variable {@link it.inforge.alfresco.repo.security.sync.keycloak.KeycloakUserRegistry#keycloakInstanceThreadLocal}.
+ * <p>
+ * It is called by the {@link it.inforge.alfresco.repo.security.sync.keycloak.KeycloakUserRegistry}
+ * after the authentication or by {@link it.inforge.alfresco.repo.security.sync.keycloak.KeycloakRegistrySynchronizerJob}
+ * through the {@link org.alfresco.repo.security.sync.UserRegistrySynchronizer}
+ * </p>
+ *
+ * @author  Francesco Milesi
+ * @since   1.0
+ */
 public class KeycloakThreadInstance {
 
-    private static final String PROP_IMPORT_REALM_NAME = "keycloak-realm"; // alfresco-email-contributor; email-alias
+    private static final String PROP_IMPORT_REALM_NAME = "keycloak-realm";
 
+    /**
+     * connector's configuration
+     */
     private KeycloakConfig config;
+    /**
+     * keycloak service
+     */
     private Keycloak keycloak;
+    /**
+     * available realms
+     */
     private String[] realms;
 
+    /**
+     * users to import
+     */
     private List<NodeDescription> users = new ArrayList<>();
+    /**
+     * map of all the groups to import
+     */
     private Map<String, Group> groupsMap = new HashMap<>();
+    /**
+     * nodeof the email contributors group
+     */
     private NodeDescription emailContributors;
 
     public KeycloakThreadInstance(KeycloakConfig config) {
@@ -49,12 +79,14 @@ public class KeycloakThreadInstance {
         this.realms = realms;
     }
 
+    /**
+     * get user's data in batches of {@link KeycloakConfig#getUserListingBatchSize()} for all configured realms
+     */
     private void init() {
         initGroups();
         Keycloak keycloak = getKeycloak();
         for (String realm : realms) {
             Integer userCount = keycloak.realm(realm).users().count();
-//            userCount = 100;
             int batchSize = config.getUserListingBatchSize();
             int firstResult = 0;
             while(firstResult < userCount) {
@@ -68,6 +100,11 @@ public class KeycloakThreadInstance {
         }
     }
 
+    /**
+     * get the data and the groups of an authenticating  user
+     *
+     * @param username
+     */
     private void init(String username) {
         initGroups();
         Keycloak keycloak = getKeycloak();
@@ -78,6 +115,13 @@ public class KeycloakThreadInstance {
         users.add(user);
     }
 
+    /**
+     * get the {@link NodeDescription} of a user and populate the group map and emailContributors node
+     *
+     * @param  realm
+     * @param id keycloak user id
+     * @return user {@link NodeDescription}
+     */
     private NodeDescription toUser(String realm, String id) {
         Keycloak keycloak = getKeycloak();
         UserRepresentation userRepresentation = keycloak.realm(realm).users().get(id).toRepresentation();

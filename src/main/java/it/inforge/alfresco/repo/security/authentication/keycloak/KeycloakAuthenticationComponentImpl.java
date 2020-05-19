@@ -10,6 +10,14 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.AccessTokenResponse;
 import org.springframework.beans.factory.InitializingBean;
 
+/**
+ * authentication component for the keycloak server, base on the {@link AbstractAuthenticationComponent}.
+ * It authenticates a user against one of the available realms and set it as the current Alfresco user
+ *
+ * @author  Francesco Milesi
+ * @see     AbstractAuthenticationComponent
+ * @since   1.0
+ */
 public class KeycloakAuthenticationComponentImpl extends AbstractAuthenticationComponent implements InitializingBean, ActivateableBean {
 
     private final Log logger = LogFactory.getLog(getClass());
@@ -20,6 +28,9 @@ public class KeycloakAuthenticationComponentImpl extends AbstractAuthenticationC
 
     private KeycloakUserRegistry userRegistry;
 
+    /**
+     * @throws Exception if the mandatory configuration properties are missing
+     */
     @Override
     public void afterPropertiesSet() throws Exception {
         if (Utils.isEmpty(config.getUrl()))
@@ -36,6 +47,14 @@ public class KeycloakAuthenticationComponentImpl extends AbstractAuthenticationC
         }
     }
 
+    /**
+     *
+     * authenticate a user and set it as the current Alfresco user
+     *
+     * @param userName the username of the authenticating user.
+     * @param password the password of the authenticating user.
+     * @throws AuthenticationException if the authentication was unsuccesfull
+     */
     @Override
     protected void authenticateImpl(String userName, char[] password) {
         String realm = realmsAuthenticate(userName, password);
@@ -53,6 +72,14 @@ public class KeycloakAuthenticationComponentImpl extends AbstractAuthenticationC
         }
     }
 
+    /**
+     *
+     * Tries to authenticate the user against one of the available keycloak realms
+     *
+     * @param userName the username of the authenticating user.
+     * @param password the password of the authenticating user.
+     * @return the name of the realm the user was authenticated against. null if the authentication was unsuccesfull
+     */
     protected String realmsAuthenticate(String userName, char[] password) {
         if (!userName.equals(userName.trim()))
         {
@@ -75,6 +102,14 @@ public class KeycloakAuthenticationComponentImpl extends AbstractAuthenticationC
         return null;
     }
 
+    /**
+     *
+     * Tries to authenticate the user against a keycloak realm via the the configured keycloak authentication client
+     *
+     * @param realm the name of the realm the user is being authenticated against.
+     * @param userName the username of the authenticating user.
+     * @param password the password of the authenticating user.
+     */
     private void realmAuthenticate(String realm, String userName, char[] password) {
         Keycloak keycloak = null;
         try {
@@ -103,7 +138,7 @@ public class KeycloakAuthenticationComponentImpl extends AbstractAuthenticationC
     }
 
     /**
-     * Set the unique name of this ldap authentication component e.g. "managed,ldap1"
+     * Set the unique name of this authentication component e.g. "keycloak1"
      *
      * @param id String
      */
@@ -113,18 +148,28 @@ public class KeycloakAuthenticationComponentImpl extends AbstractAuthenticationC
     }
 
     /**
-     * Get the unique name of this ldap authentication component e.g. "managed,ldap1";
-     * @return the unique name of this ldap authentication component
+     * Get the unique name of this authentication component e.g. "keycloak1";
+     * @return the unique name of this authentication component
      */
     String getId()
     {
         return id;
     }
 
+    /**
+     * Set the configuration used by this component
+     *
+     * @param config the configuration used for authenticaton
+     */
     public void setConfig(KeycloakConfig config) {
         this.config = config;
     }
 
+    /**
+     * Set the user registry used to synchronize alfresco with keycloak
+     *
+     * @param userRegistry used to synchronize alfresco with keycloak
+     */
     public void setUserRegistry(KeycloakUserRegistry userRegistry) {
         this.userRegistry = userRegistry;
     }
