@@ -1,0 +1,160 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans.dtd'>
+<!--
+   Bean definitions shared by the ldap and ldap-ad subsystems
+-->
+
+<beans>
+    <!-- Keycloak authentication configuration -->
+
+    <bean id="keycloak.user.behaviour" class="it.inforge.alfresco.repo.security.authentication.keycloak.KeycloakUserBehaviour" init-method="init">
+        <property name="nodeService">
+            <ref bean="NodeService" />
+        </property>
+        <property name="dictionaryService">
+            <ref bean="DictionaryService" />
+        </property>
+        <property name="policyComponent">
+            <ref bean="policyComponent" />
+        </property>
+        <property name="config" ref="keycloakConfig" />
+    </bean>
+
+    <bean id="keycloakConfig" class="it.inforge.alfresco.repo.security.authentication.keycloak.KeycloakConfig">
+        <property name="url" value="${keycloak.authentication.url}" />
+        <property name="realms" value="${keycloak.authentication.realms}" />
+        <property name="authenticationClient" value="${keycloak.authentication.client}" />
+        <property name="adminClient" value="${keycloak.admin.client}" />
+        <property name="adminSecret" value="${keycloak.admin.secret}" />
+        <property name="userListingBatchSize" value="${keycloak.user.listing.batch.size}" />
+        <property name="authZones" value="${keycloak.authentication.zones}" />
+        <property name="emailContributorsGroupName" value="${keycloak.group.emailContributors}" />
+        <property name="emailContributorAttribute" value="${keycloak.emailContributor.attribute}" />
+        <property name="emailAliasAttribute" value="${keycloak.emailAlias.attribute}" />
+        <property name="userAspect" value="${keycloak.user.aspect}" />
+        <property name="serviceRegistry" ref="ServiceRegistry" />
+    </bean>
+
+    <bean id="authenticationComponent" class="it.inforge.alfresco.repo.security.authentication.keycloak.KeycloakAuthenticationComponentImpl"
+          parent="authenticationComponentBase">
+        <property name="id">
+            <value>${instancePath}</value>
+        </property>
+        <property name="active">
+            <value>${keycloak.authentication.active}</value>
+        </property>
+        <!--
+              <property name="ldapNameResolver">
+                 <ref bean="userRegistry" />
+              </property>
+        -->
+        <property name="nodeService">
+            <ref bean="nodeService" />
+        </property>
+        <property name="personService">
+            <ref bean="personService" />
+        </property>
+        <property name="transactionService">
+            <ref bean="transactionService" />
+        </property>
+        <property name="config">
+            <ref bean="keycloakConfig" />
+        </property>
+        <property name="allowGuestLogin">
+            <value>${keycloak.authentication.allowGuestLogin}</value>
+        </property>
+        <property name="defaultAdministratorUserNameList">
+            <value>${keycloak.authentication.defaultAdministratorUserNames}</value>
+        </property>
+        <property name="userRegistry" ref="userRegistry" />
+    </bean>
+
+    <!-- Wrapped version to be used within subsystem -->
+    <bean id="AuthenticationComponent" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="proxyInterfaces">
+            <value>org.alfresco.repo.security.authentication.AuthenticationComponent</value>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager" />
+        </property>
+        <property name="target">
+            <ref bean="authenticationComponent" />
+        </property>
+        <property name="transactionAttributes">
+            <props>
+                <prop key="*">${server.transaction.mode.default}</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!-- Authenticaton service for chaining -->
+    <bean id="localAuthenticationService" class="org.alfresco.repo.security.authentication.AuthenticationServiceImpl">
+        <property name="ticketComponent">
+            <ref bean="ticketComponent" />
+        </property>
+        <property name="authenticationComponent">
+            <ref bean="authenticationComponent" />
+        </property>
+        <property name="sysAdminParams">
+            <ref bean="sysAdminParams" />
+        </property>
+        <property name="personService">
+            <ref bean="PersonService" />
+        </property>
+        <property name="protectedUsersCache">
+            <ref bean="protectedUsersCache" />
+        </property>
+        <property name="protectionEnabled">
+            <value>${authentication.protection.enabled}</value>
+        </property>
+        <property name="protectionLimit">
+            <value>${authentication.protection.limit}</value>
+        </property>
+        <property name="protectionPeriodSeconds">
+            <value>${authentication.protection.periodSeconds}</value>
+        </property>
+    </bean>
+
+    <!-- Regularly exports user and group information from Keycloak -->
+    <bean id="userRegistry" class="it.inforge.alfresco.repo.security.sync.keycloak.KeycloakUserRegistry">
+        <property name="active">
+            <value>${keycloak.synchronization.active}</value>
+        </property>
+        <property name="serviceRegistry" ref="ServiceRegistry" />
+        <property name="config">
+            <ref bean="keycloakConfig" />
+        </property>
+
+        <property name="personAttributeMapping">
+            <map>
+                <entry key="cm:emailAliases">
+                    <!-- Must match the same attribute as userIdAttributeName -->
+                    <value>${keycloak.synchronization.emailAliases}</value>
+                </entry>
+            </map>
+        </property>
+
+        <property name="groupAttributeMapping">
+            <map>
+                <entry key="cm:authorityName">
+                    <!-- Must match the same attribute as groupIdAttributeName -->
+                    <value>${ldap.synchronization.groupIdAttributeName}</value>
+                </entry>
+                <entry key="cm:authorityDisplayName">
+                    <!-- OpenLDAP: "description" -->
+                    <!-- Active Directory: "displayName" -->
+                    <value>${ldap.synchronization.groupDisplayNameAttributeName}</value>
+                </entry>
+            </map>
+        </property>
+    </bean>
+
+
+    <!-- FTP authentication -->
+    <bean id="ftpAuthenticator" class="org.alfresco.filesys.auth.ftp.AlfrescoFtpAuthenticator" parent="ftpAuthenticatorBase">
+        <property name="active">
+            <value>${keycloak.authentication.authenticateFTP}</value>
+        </property>
+    </bean>
+
+</beans>
