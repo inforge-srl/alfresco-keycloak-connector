@@ -215,6 +215,9 @@ public class KeycloakThreadInstance {
         return names;
     }
 
+    /**
+     * initialize the map of keycloak group to synchronize with the alfresco groups
+     */
     private void initGroups() {
         emailContributors = getGroup(config.getEmailContributorsGroupName(), "", config.getEmailContributorsGroupName());
         String emailContribGroupName = String.format("GROUP_%s", config.getEmailContributorsGroupName());

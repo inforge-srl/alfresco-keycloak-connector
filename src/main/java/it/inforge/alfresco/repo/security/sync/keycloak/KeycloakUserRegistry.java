@@ -16,13 +16,29 @@ import org.springframework.beans.factory.InitializingBean;
 
 import java.util.*;
 
+/**
+ * keycloak connector's implementation of the user registry that returns
+ * to Alfresco the user and group data to synchronize
+ *
+ * @author  Francesco Milesi
+ * @since   1.0
+ */
 public class KeycloakUserRegistry implements UserRegistry, LDAPNameResolver, InitializingBean, ActivateableBean {
 
     private final Log logger = LogFactory.getLog(getClass());
 
+    /**
+     * get the data of user and groups to synchronize
+     */
     private ThreadLocal<KeycloakThreadInstance> keycloakInstanceThreadLocal = new ThreadLocal<>();
 
+    /**
+     * access to alfresco repository services
+     */
     private ServiceRegistry serviceRegistry;
+    /**
+     * connector configuration
+     */
     private KeycloakConfig config;
 
     private boolean active;
@@ -49,17 +65,28 @@ public class KeycloakUserRegistry implements UserRegistry, LDAPNameResolver, Ini
         }
     }
 
+    /**
+     * used by the {@link KeycloakRegistrySynchronizerJob} to set {@link this#keycloakInstanceThreadLocal}
+     */
     public void pushThreadLocalInstance() {
         logger.debug("Pushing ThreadLocal scheduled context");
         KeycloakThreadInstance keycloakThreadInstance = new KeycloakThreadInstance(config);
         keycloakInstanceThreadLocal.set(keycloakThreadInstance);
     }
 
+    /**
+     * used by {@link it.inforge.alfresco.repo.security.authentication.keycloak.KeycloakAuthenticationComponentImpl}
+     * to set {@link this#keycloakInstanceThreadLocal}
+     */
     public void pushThreadLocalInstance(KeycloakThreadInstance keycloakThreadInstance) {
         logger.debug("Pushing ThreadLocal login context");
         this.keycloakInstanceThreadLocal.set(keycloakThreadInstance);
     }
 
+    /**
+     * used by {@link it.inforge.alfresco.repo.security.authentication.keycloak.KeycloakAuthenticationComponentImpl}
+     * and {@link KeycloakRegistrySynchronizerJob} to clear {@link this#keycloakInstanceThreadLocal}
+     */
     public void clearThreadLocalInstance() {
         logger.debug("Clearing ThreadLocal context context");
         KeycloakThreadInstance keycloakThreadInstance = this.keycloakInstanceThreadLocal.get();
